@@ -1,0 +1,10 @@
+{
+  "matterId": "MAT-2048",
+  "domain": "example.legal",
+  "hostname": "intake.example.legal",
+  "target": "203.0.113.42",
+  "recordType": "A",
+  "signedDocumentDelivery": "delivered",
+  "filingDeadline": "2027-01-12T18:00:00.000Z",
+  "action": "cutover"
+}

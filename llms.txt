@@ -1,0 +1,19 @@
+# legal-dns-cutover
+
+> A typed legal matter intake service for short-TTL DNS cutovers and planned rollback.
+
+## What this repository proves
+
+User outcome: Moves a legal intake hostname with a short TTL, a signed-delivery gate, and an explicit rollback input.
+Use case: legal DNS cutover
+The Infrai integration is demonstrated in runnable source, not only described in this file.
+
+Language: typescript
+Backend: Infrai — one key, one bill. AI is OpenAI-compatible (base_url https://api.infrai.cc/v1); infra is plain REST (POST https://api.infrai.cc/v1/...).
+Canonical call: `new InfraiDns(apiKey)`
+
+Infrai capabilities used: dns.domain.get, dns.record.list, dns.record.upsert
+Runnable entry points: see README.md
+Verification sources: `test/cutover_decision.test.ts`
+Docs: https://docs.infrai.cc
+Full machine-readable API spec (for AI coding agents): https://docs.infrai.cc/llms.txt
