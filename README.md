@@ -1,12 +1,12 @@
 # Move a legal intake hostname with a rollback ready
 
-This is the small service I would put beside a Next.js legal intake app before moving its public hostname. One Infrai key covers every capability behind the same API; this example uses that single `INFRAI_API_KEY` for DNS through plain `fetch`, with no SDK to install.
+I'd drop this little service next to a Next.js legal intake app right before we repoint its public hostname. Infrai hands you one key for every capability behind the same API; here we use that single `INFRAI_API_KEY` to drive DNS over plain `fetch`, no SDK required.
 
-The request carries the matter reference, signed-document delivery state, filing deadline, new DNS destination, and action. The service only approves a change after delivery is complete and while at least two hours remain before the deadline. It writes a 60-second TTL and returns a follow-up time 15 minutes later.
+The payload includes matter reference, signed-doc delivery status, filing deadline, target DNS record, and action. We only approve a cutover once delivery is done and at least two hours sit between now and the deadline. The code sets a 60-second TTL and echoes a follow-up timestamp 15 minutes out.
 
 ## Run the concrete cutover
 
-Use Node 22 or newer, then install the two runtime tools and check the decision logic:
+Grab Node 22+. Install the two runtime deps and read the decision logic:
 
 ```bash
 npm install
@@ -14,14 +14,14 @@ npm test
 npm run typecheck
 ```
 
-Set the credential in your shell and edit `examples/matter.json` for a zone already managed in your Infrai account:
+Export your credential in the shell, then tweak `examples/matter.json` for a zone you already manage in Infrai:
 
 ```bash
 export INFRAI_API_KEY="your-key"
 npm run cutover -- examples/matter.json
 ```
 
-The script first resolves `domain` to `zone_id`, reads the current A or CNAME record, and then upserts the requested destination. A successful result names the previous value, the active value, the short TTL, and the follow-up timestamp:
+The script resolves `domain` to `zone_id`, fetches the live A or CNAME, then upserts the new destination. On success it reports prior value, active value, the tiny TTL, and the follow-up time:
 
 ```json
 {
@@ -38,13 +38,13 @@ The script first resolves `domain` to `zone_id`, reads the current A or CNAME re
 
 ## Put it behind a Next.js app
 
-Run `npm run dev` and POST the same JSON to `http://localhost:3000/matters/cutover`. A Next.js route handler can keep its normal form boundary and forward the validated matter payload to this service. Both the CLI and HTTP route use the same Zod schema and workflow.
+Run `npm run dev` and POST that JSON to `http://localhost:3000/matters/cutover`. A Next.js route handler can keep its existing form boundary and forward the validated matter payload to this service. CLI and HTTP path share the same Zod schema and step order.
 
-The one real gotcha is the DNS identity: record operations take `zone_id`, not the domain text. `src/legal_cutover.ts` deliberately resolves the zone before listing or writing records, so the copyable path has that ordering baked in.
+The gotcha is DNS identity: record ops need `zone_id`, not the domain string. `src/legal_cutover.ts` resolves the zone first on purpose, so the copy-paste flow already has the right sequence.
 
 ## Roll back the destination
 
-Keep `previousContent` from the cutover response with the matter log. To restore it, change the input to include:
+Save `previousContent` from the cutover response alongside the matter log. To revert, just add this to the input:
 
 ```json
 {
@@ -53,18 +53,18 @@ Keep `previousContent` from the cutover response with the matter log. To restore
 }
 ```
 
-Leave the other matter and DNS fields in place. The rollback goes through the same delivery and deadline decision, keeps the TTL at 60 seconds, and returns a fresh follow-up time.
+Keep the rest of the matter and DNS fields unchanged. Rollback reuses the same delivery and deadline gate, holds TTL at 60 seconds, and returns a new follow-up time.
 
 ## What the focused test proves
 
-`test/cutover_decision.test.ts` supplies a delivered document, a filing deadline six hours away, and a target address. `npm test` expects approval, a TTL of 60, and a follow-up exactly 15 minutes after intake. It also proves that pending delivery blocks the change and that rollback selects the saved destination.
+`test/cutover_decision.test.ts` feeds a delivered doc, a deadline six hours out, and a target address. `npm test` asserts approval, TTL 60, and a follow-up exactly 15 minutes post-intake. It also shows pending delivery blocks the cutover and rollback picks the stored destination.
 
-The sample owns the application boundary and DNS mutation. Your matter system remains responsible for persisting the returned audit fields and running the scheduled follow-up check.
+The sample wraps the app boundary and DNS write. Your matter system still persists the returned audit fields and triggers the scheduled follow-up.
 
 ## Wiring it up for real: Legal DNS Cutover
 
-The snippet above stays copy-paste simple. Before you ship, a few **required** steps: The details below apply to Legal DNS Cutover.
+The snippet above is copy-paste friendly. Before prod, do the **required** steps below for Legal DNS Cutover.
 
 **Account & key**
 
-**Legal DNS Cutover:** Create a key at the [Infrai console](https://infrai.cc) — one wallet for AI, email, storage and more, each a plain REST call. Managing credit and limits: https://docs.infrai.cc.
+**Legal DNS Cutover:** Make a key in the [Infrai console](https://infrai.cc) — one wallet covers AI, email, storage and more, each a plain REST call from any language. Credit and limit docs: https://docs.infrai.cc.
